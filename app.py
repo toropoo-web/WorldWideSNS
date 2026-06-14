@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, Response
 import sqlite3
 import random
 import urllib.request
@@ -6,6 +6,7 @@ import re
 import html
 from email.utils import parsedate_to_datetime
 from datetime import datetime, timezone
+import os
 
 app = Flask(__name__)
 
@@ -43,10 +44,12 @@ SEARCH_EXPANSION = {
     "移民協定": ["移民協定", "migration pact", "EU migration pact"],
 }
 
+
 def get_country_aliases(country):
     if country in ("Japan", "JPN"):
         return ["Japan", "JPN"]
     return [country]
+
 
 def expand_search_terms(q):
     q = (q or "").strip()
@@ -64,10 +67,12 @@ def expand_search_terms(q):
 
     return terms
 
+
 def get_db_connection():
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
     return conn
+
 
 def ensure_columns(cur):
     cur.execute("PRAGMA table_info(news_posts)")
@@ -78,6 +83,7 @@ def ensure_columns(cur):
 
     if "summary_ja" not in columns:
         cur.execute("ALTER TABLE news_posts ADD COLUMN summary_ja TEXT")
+
 
 def parse_news_date(value):
     if not value:
@@ -90,6 +96,7 @@ def parse_news_date(value):
         return dt
     except Exception:
         return datetime.min.replace(tzinfo=timezone.utc)
+
 
 def fetch_og_image(url):
     if not url:
@@ -117,6 +124,7 @@ def fetch_og_image(url):
 
     return ""
 
+
 def add_thumbnail_if_missing(cur, conn, row):
     if not row:
         return row
@@ -137,6 +145,7 @@ def add_thumbnail_if_missing(cur, conn, row):
         item["thumbnail_url"] = thumbnail_url
 
     return item
+
 
 def clean_news_row(row):
     row = dict(row)
@@ -165,6 +174,7 @@ def clean_news_row(row):
 
     return row
 
+
 def clean_selected_news(row):
     if not row:
         return None
@@ -175,6 +185,7 @@ def clean_selected_news(row):
     row["display_type"] = "NEWS"
 
     return row
+
 
 def clean_sns_source(row):
     row = dict(row)
@@ -200,6 +211,7 @@ def clean_sns_source(row):
         "item_type": "sns",
     }
 
+
 def clean_selected_sns(row):
     if not row:
         return None
@@ -212,10 +224,12 @@ def clean_selected_sns(row):
 
     return item
 
+
 def pick_random_items(items, limit):
     if not items:
         return []
     return random.sample(items, min(limit, len(items)))
+
 
 def get_news_by_country(cur, conn, country, limit=3):
     ensure_columns(cur)
@@ -227,18 +241,23 @@ def get_news_by_country(cur, conn, country, limit=3):
         SELECT *
         FROM news_posts
         WHERE country IN ({placeholders})
-        ORDER BY published_at DESC
-        LIMIT ?
-    """, aliases + [limit])
+        ORDER BY id DESC
+        LIMIT 300
+    """, aliases)
 
     rows = cur.fetchall()
-    # rows = [add_thumbnail_if_missing(cur, conn, row) for row in rows]
-    rows = [clean_news_row(row) for row in rows]
+    articles = [clean_news_row(row) for row in rows]
 
-    text_articles = rows[:2]
-    thumb_article = rows[2] if len(rows) >= 3 else None
+    articles.sort(
+        key=lambda x: parse_news_date(x.get("published_at")),
+        reverse=True
+    )
 
-    return text_articles, thumb_article
+    selected_articles = articles[:limit]
+    thumb_article = selected_articles[0] if selected_articles else None
+
+    return selected_articles, thumb_article
+
 
 def get_country_news_list(cur, conn, country, limit=20):
     ensure_columns(cur)
@@ -250,15 +269,20 @@ def get_country_news_list(cur, conn, country, limit=20):
         SELECT *
         FROM news_posts
         WHERE country IN ({placeholders})
-        ORDER BY published_at DESC
-        LIMIT ?
-    """, aliases + [limit])
+        ORDER BY id DESC
+        LIMIT 300
+    """, aliases)
 
     rows = cur.fetchall()
-    # rows = [add_thumbnail_if_missing(cur, conn, row) for row in rows]
     rows = [clean_news_row(row) for row in rows]
 
-    return rows
+    rows.sort(
+        key=lambda x: parse_news_date(x.get("published_at")),
+        reverse=True
+    )
+
+    return rows[:limit]
+
 
 def get_europe_cross_tile(cur, conn):
     ensure_columns(cur)
@@ -286,11 +310,10 @@ def get_europe_cross_tile(cur, conn):
             WHERE country = 'Europe'
               AND source_name = ?
             ORDER BY id DESC
-            LIMIT 100
+            LIMIT 300
         """, (source_name,))
 
         rows = cur.fetchall()
-        # rows = [add_thumbnail_if_missing(cur, conn, row) for row in rows]
         rows = [clean_news_row(row) for row in rows]
 
         rows.sort(
@@ -302,6 +325,7 @@ def get_europe_cross_tile(cur, conn):
             results.append(rows[0])
 
     return results
+
 
 def get_europe_monitor_news(cur, conn, q="", limit=50):
     ensure_columns(cur)
@@ -345,7 +369,6 @@ def get_europe_monitor_news(cur, conn, q="", limit=50):
         """)
 
     rows = cur.fetchall()
-    # rows = [add_thumbnail_if_missing(cur, conn, row) for row in rows]
     rows = [clean_news_row(row) for row in rows]
 
     rows.sort(
@@ -354,6 +377,7 @@ def get_europe_monitor_news(cur, conn, q="", limit=50):
     )
 
     return rows[:limit]
+
 
 def get_global_search_results(cur, conn, q="", limit=120):
     ensure_columns(cur)
@@ -390,7 +414,6 @@ def get_global_search_results(cur, conn, q="", limit=120):
     """, params + [limit])
 
     rows = cur.fetchall()
-    # rows = [add_thumbnail_if_missing(cur, conn, row) for row in rows]
     rows = [clean_news_row(row) for row in rows]
 
     rows.sort(
@@ -400,6 +423,7 @@ def get_global_search_results(cur, conn, q="", limit=120):
 
     return rows
 
+
 def get_europe_total_count(cur):
     cur.execute("""
         SELECT COUNT(*)
@@ -407,6 +431,7 @@ def get_europe_total_count(cur):
         WHERE country = 'Europe'
     """)
     return cur.fetchone()[0]
+
 
 def get_europe_source_counts(cur):
     cur.execute("""
@@ -417,6 +442,7 @@ def get_europe_source_counts(cur):
         ORDER BY COUNT(*) DESC
     """)
     return cur.fetchall()
+
 
 def get_sns_sources_by_country(cur, country_ja, limit=3):
     cur.execute("""
@@ -430,6 +456,7 @@ def get_sns_sources_by_country(cur, country_ja, limit=3):
     rows = [clean_sns_source(row) for row in cur.fetchall()]
     return pick_random_items(rows, limit)
 
+
 def get_jpn_social_monitor_items(cur, conn, limit=3):
     ensure_columns(cur)
 
@@ -442,7 +469,6 @@ def get_jpn_social_monitor_items(cur, conn, limit=3):
     """, (limit,))
 
     rows = cur.fetchall()
-    # rows = [add_thumbnail_if_missing(cur, conn, row) for row in rows]
     rows = [clean_news_row(row) for row in rows]
 
     for row in rows:
@@ -451,6 +477,7 @@ def get_jpn_social_monitor_items(cur, conn, limit=3):
         row["source_name"] = row.get("source_name") or "JPN SOCIAL"
 
     return rows
+
 
 def get_country_sns_list(cur, country, limit=20):
     if country == "Japan":
@@ -469,6 +496,7 @@ def get_country_sns_list(cur, country, limit=20):
     """, (country_ja, limit))
 
     return [clean_sns_source(row) for row in cur.fetchall()]
+
 
 def get_selected_item(cur, post_id):
     if not post_id:
@@ -495,6 +523,7 @@ def get_selected_item(cur, post_id):
 
     return clean_selected_news(cur.fetchone())
 
+
 def build_country_payload(cur, conn, country):
     country_ja = COUNTRY_SOURCE_MAP.get(country, country)
 
@@ -512,6 +541,7 @@ def build_country_payload(cur, conn, country):
         "thumb_article": thumb_article,
         "sns": sns_items,
     }
+
 
 @app.route("/")
 def index():
@@ -573,6 +603,7 @@ def index():
         europe_cross_tile=europe_cross_tile,
     )
 
+
 @app.route("/europe")
 def europe_page():
     q = request.args.get("q", "").strip()
@@ -596,6 +627,7 @@ def europe_page():
         source_counts=source_counts,
         articles=articles,
     )
+
 
 @app.route("/country/<country>")
 def country_page(country):
@@ -633,7 +665,66 @@ def country_page(country):
         sns_articles=sns_articles,
     )
 
+
+@app.route("/sitemap.xml")
+def sitemap():
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+<url>
+<loc>https://worldwidensns.onrender.com/</loc>
+<changefreq>daily</changefreq>
+<priority>1.0</priority>
+</url>
+
+<url>
+<loc>https://worldwidensns.onrender.com/europe</loc>
+<changefreq>daily</changefreq>
+<priority>0.9</priority>
+</url>
+
+<url>
+<loc>https://worldwidensns.onrender.com/country/Germany</loc>
+<changefreq>daily</changefreq>
+<priority>0.8</priority>
+</url>
+
+<url>
+<loc>https://worldwidensns.onrender.com/country/USA</loc>
+<changefreq>daily</changefreq>
+<priority>0.8</priority>
+</url>
+
+<url>
+<loc>https://worldwidensns.onrender.com/country/UK</loc>
+<changefreq>daily</changefreq>
+<priority>0.8</priority>
+</url>
+
+<url>
+<loc>https://worldwidensns.onrender.com/country/France</loc>
+<changefreq>daily</changefreq>
+<priority>0.8</priority>
+</url>
+
+<url>
+<loc>https://worldwidensns.onrender.com/country/Italy</loc>
+<changefreq>daily</changefreq>
+<priority>0.8</priority>
+</url>
+
+<url>
+<loc>https://worldwidensns.onrender.com/country/Japan</loc>
+<changefreq>daily</changefreq>
+<priority>0.8</priority>
+</url>
+
+</urlset>
+"""
+
+    return Response(xml, mimetype="application/xml")
+
+
 if __name__ == "__main__":
-    import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
