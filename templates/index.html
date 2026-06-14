@@ -214,36 +214,40 @@
     <section class="content-grid">
 
       <section class="latest-area europe-cross-section">
-        <div class="section-head">
-          <div>
-            <p class="section-kicker">EUROPE CROSS TILE</p>
-            <h2>Europe Cross News</h2>
-          </div>
-          <p class="section-note">欧州横断メディア各社から最新1件ずつ表示</p>
-        </div>
+  <div class="section-head">
+    <div>
+      <p class="section-kicker">UPDATE LOG</p>
+      <h2>更新情報</h2>
+    </div>
+    <p class="section-note">WWSの公開・修正・データ追加履歴</p>
+  </div>
 
-        <div class="europe-source-list">
-          {% for item in europe_cross_tile %}
-          <a class="europe-source-row" href="{{ url_for('europe_page') }}" target="_blank" rel="noopener">
-            <div class="europe-source-meta">
-              <span>{{ item.source_name }}</span>
-              <span>{{ item.published_at }}</span>
-            </div>
-            <h3 class="europe-source-title">{{ item.display_title }}</h3>
-          </a>
-          {% else %}
-          <div class="europe-source-row">
-            <h3 class="europe-source-title">Europe Cross News 準備中</h3>
-          </div>
-          {% endfor %}
-        </div>
+  <div class="europe-source-list">
+    <div class="europe-source-row">
+      <div class="europe-source-meta">
+        <span>2026-06-15</span>
+        <span>Search Console</span>
+      </div>
+      <h3 class="europe-source-title">Search Console認証・sitemap.xml送信完了</h3>
+    </div>
 
-        <div class="monitor-link-wrap">
-          <a class="monitor-link" href="{{ url_for('europe_page') }}" target="_blank">
-            Europe Cross Monitor を開く
-          </a>
-        </div>
-      </section>
+    <div class="europe-source-row">
+      <div class="europe-source-meta">
+        <span>2026-06-15</span>
+        <span>Phase6</span>
+      </div>
+      <h3 class="europe-source-title">CountryPage高速化・検索確認・JPN CountryPage整形完了</h3>
+    </div>
+
+    <div class="europe-source-row">
+      <div class="europe-source-meta">
+        <span>2026-06-14</span>
+        <span>Europe</span>
+      </div>
+      <h3 class="europe-source-title">Europe Cross News 2456件を追加</h3>
+    </div>
+  </div>
+</section>
 
       <aside class="search-area" id="results">
         <h2>WWS Global Search</h2>
