@@ -665,6 +665,10 @@ def country_page(country):
         sns_articles=sns_articles,
     )
 
+@app.route("/debug123")
+def debug123():
+    return "DEBUG_OK_20260615"
+
 
 @app.route("/sitemap.xml")
 def sitemap():
@@ -721,7 +725,6 @@ def sitemap():
 
 </urlset>
 """
-
     return Response(xml, mimetype="application/xml")
 
 
