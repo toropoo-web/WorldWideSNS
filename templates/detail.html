@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>記事詳細</title>
+</head>
+<body>
+
+<p>
+<a href="{{ url_for('index') }}">一覧に戻る</a>
+</p>
+
+<div style="border:1px solid #ccc; padding:16px; margin:12px 0;">
+
+
+<h1>
+{% if post['title_ja'] and not post['title_ja'].startswith('翻訳済み_') %}
+    {{ post['title_ja'] }}
+{% else %}
+    {{ post['title'] }}
+{% endif %}
+</h1>
+
+<p class="post-summary">
+{% if post['summary_ja'] %}
+    {{ post['summary_ja'] }}
+{% else %}
+    要約なし
+{% endif %}
+</p>
+
+<p class="post-meta">
+    国：{{ post['country'] }}　
+    ソース：{{ post['source_name'] }}　
+    公開日：{{ post['published_at'] }}
+</p>
+
+<p>
+<a href="{{ post['url'] }}" target="_blank">元記事を開く</a>
+</p>
+
+</div>
+
+</body>
+</html>

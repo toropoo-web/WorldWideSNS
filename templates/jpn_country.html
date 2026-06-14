@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ country }}｜WWS</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/css/flag-icons.min.css">
+</head>
+<body>
+
+<main class="page">
+
+  {% set flag_code = "un" %}
+  {% if country == "Japan" %}
+    {% set flag_code = "jp" %}
+  {% elif country == "USA" %}
+    {% set flag_code = "us" %}
+  {% elif country == "UK" %}
+    {% set flag_code = "gb" %}
+  {% elif country == "France" %}
+    {% set flag_code = "fr" %}
+  {% elif country == "Italy" %}
+    {% set flag_code = "it" %}
+  {% elif country == "Germany" %}
+    {% set flag_code = "de" %}
+  {% endif %}
+
+  <section class="country-page-header">
+    <h1>
+      <span class="fi fi-{{ flag_code }}"></span>
+      {{ country }}
+    </h1>
+    <p>News / SNS Monitor</p>
+  </section>
+
+  {% if selected_post %}
+  <section class="selected-post-card">
+    <div class="tile-section-label">{{ selected_post.display_type }}</div>
+
+    {% if selected_post.thumbnail_url %}
+    <div class="selected-post-image">
+      <img src="{{ selected_post.thumbnail_url }}" alt="{{ selected_post.display_title }}" referrerpolicy="no-referrer">
+    </div>
+    {% endif %}
+
+    <h2>{{ selected_post.display_title }}</h2>
+
+    {% if selected_post.title and selected_post.title != selected_post.display_title %}
+    <p class="original-title">{{ selected_post.title }}</p>
+    {% endif %}
+
+    {% if selected_post.display_summary %}
+    <p class="selected-summary">{{ selected_post.display_summary }}</p>
+    {% else %}
+    <p class="selected-summary">概要準備中</p>
+    {% endif %}
+
+    <p class="meta">
+      Source: {{ selected_post.display_source }}
+      {% if selected_post.item_type %}
+      ｜ Type: {{ selected_post.item_type }}
+      {% endif %}
+      {% if selected_post.published_at %}
+      ｜ Published: {{ selected_post.published_at }}
+      {% endif %}
+    </p>
+
+    <p class="source-url">
+      <a href="{{ selected_post.display_url }}" target="_blank">元ページを開く</a>
+    </p>
+  </section>
+  {% endif %}
+
+  <section class="country-list-area">
+    <h2>
+      <span class="fi fi-{{ flag_code }}"></span>
+      {{ country }}｜News / SNS
+    </h2>
+
+    <div class="country-article-grid">
+      {% for article in articles[:10] %}
+      <article class="country-article-tile {% if article.thumbnail_url %}has-thumb{% else %}no-thumb{% endif %}">
+
+        {% if article.thumbnail_url %}
+        <div class="country-article-thumb">
+          <img src="{{ article.thumbnail_url }}" alt="{{ article.title_short }}" referrerpolicy="no-referrer">
+        </div>
+        {% endif %}
+
+        <div class="country-article-body">
+          <a href="{{ url_for('country_page', country=country, post_id=article.id) }}" target="_blank" class="country-article-title-ja">
+            {{ article.title_short }}
+          </a>
+
+          {% if article.title and article.title != article.title_short %}
+          <div class="country-article-title-original">
+            {{ article.title }}
+          </div>
+          {% endif %}
+
+          <div class="country-article-meta">
+            {% if article.item_type == "sns" %}
+            Source: {{ article.title }} ｜ Type: {{ article.platform }}
+            {% else %}
+            Source: {{ article.source_name }} ｜ Type: NEWS
+            {% endif %}
+          </div>
+        </div>
+
+      </article>
+      {% else %}
+      <p>表示できる情報がありません</p>
+      {% endfor %}
+    </div>
+  </section>
+
+</main>
+
+</body>
+</html>

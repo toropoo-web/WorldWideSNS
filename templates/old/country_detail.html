@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>{{ country }}ニュース</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<main class="page">
+
+  <!-- 拡大記事 -->
+  <section class="featured-article">
+    <img src="{{ featured_article.image_url }}" alt="記事画像">
+    <h1>{{ featured_article.title_ja }}</h1>
+    <p>{{ featured_article.summary_ja }}</p>
+    <p>ソース：{{ featured_article.source_name }}　公開日：{{ featured_article.published_at }}</p>
+    <p><a href="{{ featured_article.url }}" target="_blank">元記事を開く</a></p>
+  </section>
+
+  <!-- 残りニュース一覧 -->
+  <section class="remaining-articles">
+    <h2>その他の記事</h2>
+    {% for article in remaining_articles %}
+      <div class="article-card">
+        <h3>{{ article.title_ja }}</h3>
+        <p>ソース：{{ article.source_name }}　公開日：{{ article.published_at }}</p>
+      </div>
+    {% endfor %}
+  </section>
+
+</main>
+
+</body>
+</html>

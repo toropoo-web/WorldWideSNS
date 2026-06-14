@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ country_name }}ページ</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>{{ country_name }} の注目情報</h1>
+
+    <!-- Newsセクション -->
+    <div class="news-section">
+        {% for news in news_list %}
+            <div class="news-card">
+                <h3>{{ news.title_ja }}</h3>
+                <p>ソース: {{ news.source_name }}</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- SNSセクション -->
+    <div class="sns-section">
+        {% for sns in sns_list %}
+            <div class="sns-card">
+                <h4>{{ sns.platform }}:</h4>
+                <p>{{ sns.content }}</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <a href="{{ url_for('index') }}">トップに戻る</a>
+</body>
+</html>

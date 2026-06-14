@@ -1,0 +1,471 @@
+/* Page全体 */
+.page {
+  display: grid;
+  grid-gap: 20px;
+  background-color: #000209;
+  padding: 0 20px;
+}
+
+/* HERO */
+.hero {
+  width: 100%;
+  height: auto;
+  position: relative;
+  overflow: visible;
+}
+
+.hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 統計カード */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.stat-card {
+  background: transparent;
+  border: 1px solid #3a3939;
+  padding: 10px;
+  text-align: center;
+  color: #f1f0e9;
+}
+
+/* 主要国モニター */
+.country-monitor {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.country-card {
+  background: rgba(0, 6, 22, 0.986);
+
+  border: 1px solid rgba(255,255,255,0.12);
+
+  border-radius: 0;
+
+  box-shadow: 0 4px 20px rgba(0,0,0,0.50);
+
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+
+  text-align: left;
+  padding: 12px;
+
+  color: #f8f8f6;
+  font-size: 1.1rem;
+
+  position: relative;
+  overflow: hidden;
+}
+
+.country-head,
+.country-head a,
+.country-head a:visited {
+  color: #f8f8f6;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.country-head a:hover {
+  color: #ffd84d;
+}
+
+.tile-section-label {
+  color: #f8f8f6;
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+
+.article-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.article-list li {
+  color: #f8f8f6;
+  margin-bottom: 5px;
+  font-size: 1rem;
+  line-height: 1.3;
+}
+
+.article-list li a {
+  font-size: 1rem;
+  line-height: 1.3;
+  font-family: "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif;
+  font-weight: 500;
+}
+
+.country-card a,
+.country-card a:visited {
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.country-card a:hover {
+  color: #ffd84d;
+  text-decoration: underline;
+}
+
+.source-label {
+  color: #d0d0d0;
+  font-size: 0.85rem;
+}
+
+/* NEWS画像 */
+.news-image-item {
+  margin-top: 8px;
+}
+
+.news-image-item img {
+  width: 100%;
+  height: 55px;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+}
+
+/* 国別タイル発光 */
+.tile-japan {
+  border: 1px solid rgba(255,120,140,0.55);
+  box-shadow: inset 0 0 10px rgba(255,59,92,0.75);
+}
+
+.tile-usa {
+  border: 1px solid rgba(120,160,255,0.55);
+  box-shadow: inset 0 0 10px rgba(55,90,255,0.75);
+}
+
+.tile-uk {
+  border: 1px solid rgba(120,255,180,0.55);
+  box-shadow: inset 0 0 10px rgba(0,210,120,0.75);
+}
+
+.tile-italy {
+  border: 1px solid rgba(255,225,120,0.55);
+  box-shadow: inset 0 0 10px rgba(255,215,0,0.75);
+}
+
+.tile-france {
+  border: 1px solid rgba(220,140,255,0.55);
+  box-shadow: inset 0 0 10px rgba(186,85,255,0.75);
+}
+
+.tile-germany {
+  border: 1px solid rgba(120,245,255,0.55);
+  box-shadow: inset 0 0 10px rgba(0,225,255,0.75);
+}
+
+.tile-canada {
+  border: 1px solid rgba(255,120,120,0.55);
+  box-shadow: inset 0 0 10px rgba(255,80,80,0.75);
+}
+
+/* 最新情報＋検索エリア */
+.content-grid {
+  display: grid;
+  grid-template-columns: 5fr 3fr;
+  gap: 20px;
+}
+
+.latest-area {
+  background: rgba(255,255,255,0.05);
+  padding: 10px;
+  color: #fff;
+}
+
+.search-area {
+  background: rgba(255,255,255,0.05);
+  padding: 10px;
+  color: #fff;
+}
+
+/* CountryPage */
+.country-page-header {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.12);
+  padding: 16px;
+  color: #f8f8f6;
+}
+
+.country-page-header h1 {
+  color: #f8f8f6;
+  margin: 0;
+}
+
+.country-page-header p {
+  color: #d0d0d0;
+  margin: 6px 0 0;
+}
+
+/* Bカード */
+.selected-post-card {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.16);
+  padding: 16px;
+  border-radius: 8px;
+  color: #f8f8f6;
+  margin-bottom: 10px;
+}
+
+.selected-post-card h2 {
+  color: #ffffff;
+  font-weight: bold;
+  font-size: 1.3rem;
+  margin-top: 8px;
+}
+
+.selected-post-card p {
+  color: #f8f8f6;
+}
+
+.selected-post-card .meta {
+  color: #d0d0d0;
+  font-size: 0.9rem;
+}
+
+.selected-post-card a,
+.selected-post-card a:visited {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.selected-post-card a:hover {
+  color: #ffd84d;
+}
+
+.selected-post-image img {
+  width: 100%;
+  max-height: 260px;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.original-title {
+  color: #d8d8d8;
+  font-size: 0.95rem;
+}
+
+.selected-summary {
+  color: #f8f8f6;
+  line-height: 1.6;
+}
+
+/* A一覧 */
+.country-list-area {
+  padding: 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  color: #f8f8f6;
+}
+
+.country-list-area h2 {
+  color: #f8f8f6;
+}
+
+.country-article-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.country-article-tile {
+  gap: 12px;
+  align-items: start;
+  background: rgba(255,255,255,0.035);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 8px;
+  padding: 10px;
+  min-height: 96px;
+}
+
+.country-article-tile.has-thumb {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+}
+
+.country-article-tile.no-thumb {
+  display: block;
+}
+
+.country-article-thumb {
+  width: 120px;
+  height: 78px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.08);
+}
+
+.country-article-thumb img {
+  width: 120px;
+  height: 78px;
+  object-fit: cover;
+  display: block;
+}
+
+.country-article-body {
+  min-width: 0;
+}
+
+.country-article-title-ja,
+.country-article-title-ja:visited {
+  color: #ffffff;
+  font-weight: bold;
+  text-decoration: none;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.country-article-title-ja:hover {
+  color: #ffd84d;
+  text-decoration: underline;
+}
+
+.country-article-title-original {
+  color: #d0d0d0;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+  line-height: 1.35;
+}
+
+.country-article-meta {
+  color: #bdbdbd;
+  font-size: 0.85rem;
+}
+
+.country-list-area a,
+.country-list-area a:visited {
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.country-list-area a:hover {
+  color: #ffd84d;
+  text-decoration: underline;
+}
+
+/* ===============================
+   CountryPage Flag Icons
+   =============================== */
+
+.country-title,
+.country-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.flag-icon {
+  display: inline-block;
+  width: 28px;
+  height: 18px;
+  border: 1px solid rgba(255,255,255,0.35);
+  box-shadow: 0 0 8px rgba(255,255,255,0.15);
+  flex-shrink: 0;
+}
+
+/* Japan */
+.flag-japan {
+  background:
+    radial-gradient(circle at center, #bc002d 0 32%, transparent 33%),
+    #ffffff;
+}
+
+/* Germany */
+.flag-germany {
+  background:
+    linear-gradient(
+      to bottom,
+      #000000 0 33.33%,
+      #dd0000 33.33% 66.66%,
+      #ffce00 66.66% 100%
+    );
+}
+
+/* France */
+.flag-france {
+  background:
+    linear-gradient(
+      to right,
+      #0055a4 0 33.33%,
+      #ffffff 33.33% 66.66%,
+      #ef4135 66.66% 100%
+    );
+}
+
+/* Italy */
+.flag-italy {
+  background:
+    linear-gradient(
+      to right,
+      #009246 0 33.33%,
+      #ffffff 33.33% 66.66%,
+      #ce2b37 66.66% 100%
+    );
+}
+
+/* Canada */
+.flag-canada {
+  background:
+    linear-gradient(
+      to right,
+      #d52b1e 0 25%,
+      #ffffff 25% 75%,
+      #d52b1e 75% 100%
+    );
+}
+
+/* USA simplified */
+.flag-usa {
+  background:
+    linear-gradient(to bottom,
+      #b22234 0 7.69%,
+      #ffffff 7.69% 15.38%,
+      #b22234 15.38% 23.07%,
+      #ffffff 23.07% 30.76%,
+      #b22234 30.76% 38.45%,
+      #ffffff 38.45% 46.14%,
+      #b22234 46.14% 53.83%,
+      #ffffff 53.83% 61.52%,
+      #b22234 61.52% 69.21%,
+      #ffffff 69.21% 76.9%,
+      #b22234 76.9% 84.59%,
+      #ffffff 84.59% 92.28%,
+      #b22234 92.28% 100%
+    );
+  position: relative;
+}
+
+.flag-usa::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 42%;
+  height: 54%;
+  background: #3c3b6e;
+}
+
+/* UK simplified */
+.flag-uk {
+  background:
+    linear-gradient(90deg, transparent 42%, #ffffff 42% 58%, transparent 58%),
+    linear-gradient(0deg, transparent 38%, #ffffff 38% 62%, transparent 62%),
+    linear-gradient(90deg, transparent 46%, #c8102e 46% 54%, transparent 54%),
+    linear-gradient(0deg, transparent 43%, #c8102e 43% 57%, transparent 57%),
+    #012169;
+}

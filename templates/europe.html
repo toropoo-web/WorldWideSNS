@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Europe Cross Monitor｜WWS</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <style>
+    body {
+      background: #020817;
+      color: #ffffff;
+    }
+
+    .europe-page {
+      width: min(1180px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 34px 0 60px;
+    }
+
+    .europe-hero {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: center;
+      padding: 28px;
+      border: 2px solid rgba(245, 248, 255, 0.85);
+      background: rgba(0, 6, 22, 0.986);
+      box-shadow:
+        0 0 18px rgba(245, 248, 255, 0.22),
+        inset 0 0 20px rgba(245, 248, 255, 0.08);
+      margin-bottom: 24px;
+    }
+
+    .eu-mark {
+      font-size: 46px;
+      line-height: 1;
+      filter: drop-shadow(0 0 10px rgba(120, 170, 255, 0.55));
+    }
+
+    .kicker {
+      margin: 0 0 8px;
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      color: #8fb3ff;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 32px;
+      color: #ffffff;
+    }
+
+    .lead {
+      margin: 12px 0 0;
+      color: rgba(245, 248, 255, 0.78);
+      font-size: 14px;
+    }
+
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin: 22px 0;
+    }
+
+    .stat-box {
+      padding: 16px;
+      border: 1px solid rgba(245, 248, 255, 0.45);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: rgba(190, 210, 255, 0.78);
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .search-panel {
+      padding: 20px 24px;
+      border: 1px solid rgba(245, 248, 255, 0.55);
+      background: rgba(0, 6, 22, 0.986);
+      margin-bottom: 24px;
+    }
+
+    .search-form {
+      display: flex;
+      gap: 10px;
+    }
+
+    .search-form input {
+      flex: 1;
+      padding: 12px 14px;
+      border: 1px solid rgba(245, 248, 255, 0.45);
+      background: rgba(255, 255, 255, 0.06);
+      color: #ffffff;
+      font-size: 14px;
+    }
+
+    .search-form button {
+      padding: 12px 22px;
+      border: 1px solid rgba(245, 248, 255, 0.85);
+      background: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+      cursor: pointer;
+    }
+
+    .article-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .article-row {
+      display: grid;
+      grid-template-columns: 1fr 190px;
+      gap: 18px;
+      padding: 14px;
+      border: 1px solid rgba(245, 248, 255, 0.25);
+      background: rgba(0, 6, 22, 0.986);
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .article-body {
+      min-width: 0;
+    }
+
+    .article-thumb {
+      width: 190px;
+      height: 118px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(245, 248, 255, 0.20);
+    }
+
+    .article-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .article-meta {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+      color: rgba(190, 210, 255, 0.78);
+      font-size: 12px;
+    }
+
+    .article-title-ja {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.5;
+      color: #ffffff;
+    }
+
+    .article-title-en {
+      margin: 7px 0 0;
+      font-size: 12px;
+      line-height: 1.45;
+      color: rgba(245, 248, 255, 0.58);
+    }
+
+    .article-summary {
+      margin: 8px 0 0;
+      font-size: 13px;
+      line-height: 1.55;
+      color: rgba(245, 248, 255, 0.72);
+    }
+
+    .article-row:hover .article-title-ja {
+      text-decoration: underline;
+    }
+
+    .top-link {
+      display: inline-block;
+      margin-top: 28px;
+      color: #ffffff;
+      text-decoration: none;
+      border: 1px solid rgba(245, 248, 255, 0.7);
+      padding: 10px 16px;
+    }
+
+    @media (max-width: 760px) {
+      .europe-hero {
+        display: block;
+      }
+
+      .eu-mark {
+        margin-top: 16px;
+      }
+
+      .stat-row {
+        grid-template-columns: 1fr;
+      }
+
+      .search-form {
+        display: block;
+      }
+
+      .search-form button {
+        width: 100%;
+        margin-top: 10px;
+      }
+
+      .article-row {
+        grid-template-columns: 1fr;
+      }
+
+      .article-thumb {
+        width: 100%;
+        height: 170px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <main class="europe-page">
+
+    <section class="europe-hero">
+      <div>
+        <p class="kicker">EUROPE CROSS MONITOR</p>
+        <h1>🇪🇺 Europe Cross Monitor</h1>
+        <p class="lead">
+          欧州横断メディアの移民・難民・国境・治安関連ニュースを横断表示。
+        </p>
+      </div>
+      <div class="eu-mark">🇪🇺</div>
+    </section>
+
+    <section class="stat-row">
+      <div class="stat-box">
+        <div class="stat-label">Europe記事総数</div>
+        <div class="stat-value">{{ total_count }}</div>
+      </div>
+
+      {% for source_name, count in source_counts %}
+      <div class="stat-box">
+        <div class="stat-label">{{ source_name }}</div>
+        <div class="stat-value">{{ count }}</div>
+      </div>
+      {% endfor %}
+    </section>
+
+    <section class="search-panel">
+      <form class="search-form" method="get" action="{{ url_for('europe_page') }}">
+        <input type="text" name="q" value="{{ q }}" placeholder="Europe Cross内を検索 例：asylum / border / deportation">
+        <button type="submit">検索</button>
+      </form>
+    </section>
+
+    <section class="article-list">
+      {% for item in articles %}
+      <a class="article-row" href="{{ item.url }}" target="_blank" rel="noopener">
+        <div class="article-body">
+          <div class="article-meta">
+            <span>🇪🇺 {{ item.source_name }}</span>
+            <span>{{ item.published_at }}</span>
+          </div>
+
+          <h2 class="article-title-ja">{{ item.display_title }}</h2>
+
+          {% if item.title and item.title != item.display_title %}
+          <p class="article-title-en">{{ item.title }}</p>
+          {% endif %}
+
+          {% if item.display_summary %}
+          <p class="article-summary">{{ item.display_summary }}</p>
+          {% endif %}
+        </div>
+
+        <div class="article-thumb">
+          <img src="{{ item.thumbnail_url or url_for('static', filename='news_thumb.jpg') }}" alt="{{ item.display_title }}" referrerpolicy="no-referrer">
+        </div>
+      </a>
+      {% else %}
+      <div class="article-row">
+        <div class="article-body">
+          <h2 class="article-title-ja">該当記事なし</h2>
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+
+    <a class="top-link" href="{{ url_for('index') }}">TOPへ戻る</a>
+
+  </main>
+
+</body>
+</html>

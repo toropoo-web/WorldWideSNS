@@ -1,0 +1,9 @@
+﻿__pycache__/
+*.pyc
+chrome_x_profile/
+chrome_x_profile_wws/
+bakup/
+input/
+x_debug.html
+output/x_posts/
+scripts/

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>WWS｜海外移民ニュースウォッチ</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/css/flag-icons.min.css">
+
+  <style>
+    .content-grid { display: block !important; }
+
+    .europe-cross-section,
+    .search-area {
+      width: 100%;
+      margin-top: 42px;
+      padding: 24px 28px;
+      border: 2px solid rgba(245, 248, 255, 0.85);
+      background: rgba(0, 6, 22, 0.986);
+      box-shadow:
+        0 0 18px rgba(245, 248, 255, 0.22),
+        inset 0 0 20px rgba(245, 248, 255, 0.08);
+      box-sizing: border-box;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: flex-end;
+      margin-bottom: 18px;
+    }
+
+    .section-kicker {
+      margin: 0 0 6px;
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      color: #8fb3ff;
+    }
+
+    .section-head h2,
+    .search-area h2 {
+      margin: 0;
+      font-size: 24px;
+      color: #ffffff;
+    }
+
+    .section-note {
+      margin: 0;
+      color: rgba(245, 248, 255, 0.78);
+      font-size: 13px;
+    }
+
+    .europe-source-list,
+    .search-result-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      border-top: 1px solid rgba(245, 248, 255, 0.35);
+    }
+
+    .europe-source-row,
+    .search-result-row {
+      display: block;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(245, 248, 255, 0.28);
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .europe-source-meta,
+    .search-result-meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 5px;
+      font-size: 11px;
+      color: rgba(190, 210, 255, 0.8);
+    }
+
+    .europe-source-title,
+    .search-result-title {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.45;
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .monitor-link-wrap {
+      margin-top: 18px;
+      text-align: right;
+    }
+
+    .monitor-link {
+      display: inline-block;
+      padding: 10px 18px;
+      border: 1px solid rgba(245, 248, 255, 0.75);
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .search-form {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+      margin-bottom: 22px;
+    }
+
+    .search-form input {
+      flex: 1;
+      padding: 12px 14px;
+      border: 1px solid rgba(245, 248, 255, 0.45);
+      background: rgba(255, 255, 255, 0.06);
+      color: #ffffff;
+      font-size: 14px;
+    }
+
+    .search-form button {
+      padding: 12px 22px;
+      border: 1px solid rgba(245, 248, 255, 0.85);
+      background: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+      cursor: pointer;
+    }
+
+    @media (max-width: 760px) {
+      .section-head { display: block; }
+      .section-note { margin-top: 8px; }
+      .search-form { display: block; }
+      .search-form button { width: 100%; margin-top: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+  <main class="page">
+
+    <section class="hero">
+      <a href="{{ url_for('index') }}">
+        <img src="{{ url_for('static', filename='hero_bg.jpg') }}" alt="WWS">
+      </a>
+    </section>
+
+    <section class="stats-grid">
+      <div class="stat-card">収集記事: {{ total_posts }}</div>
+      <div class="stat-card">監視国: {{ total_countries }}</div>
+      <div class="stat-card">巡回ソース: {{ total_sources }}</div>
+    </section>
+
+    <section class="country-monitor">
+
+      {% for country, sns_list, articles_list, thumb_article, flag_code, code in [
+          ('Japan', japan_sns, japan_articles, japan_thumb_article, 'jp', 'JPN'),
+          ('USA', usa_sns, usa_articles, usa_thumb_article, 'us', 'USA'),
+          ('UK', uk_sns, uk_articles, uk_thumb_article, 'gb', 'UK'),
+          ('Italy', italy_sns, italy_articles, italy_thumb_article, 'it', 'ITA'),
+          ('France', france_sns, france_articles, france_thumb_article, 'fr', 'FRA'),
+          ('Germany', germany_sns, germany_articles, germany_thumb_article, 'de', 'GER')
+      ] %}
+
+      <div class="country-card tile-{{ country|lower }}">
+        <div class="country-head">
+          <a href="{{ url_for('country_page', country=country) }}" target="_blank">
+            <span class="fi fi-{{ flag_code }}"></span> {{ code }}
+          </a>
+        </div>
+
+        <div class="tile-section-label">SNS</div>
+        <ul class="article-list sns-list">
+          {% for sns in sns_list %}
+          <li>
+            <a href="{{ url_for('country_page', country=country, post_id=sns.id) }}" target="_blank">
+              {{ sns.title }}
+            </a>
+            <span class="source-label">[{{ sns.platform }}]</span>
+          </li>
+          {% else %}
+          <li>SNS準備中</li>
+          {% endfor %}
+        </ul>
+
+        <div class="tile-section-label">NEWS</div>
+        <ul class="article-list news-list">
+          {% for article in articles_list %}
+          <li>
+            <a href="{{ url_for('country_page', country=country, post_id=article.id) }}" target="_blank">
+              {{ article.title_short }}
+            </a>
+            <span class="source-label">{{ article.source_name }}</span>
+          </li>
+          {% else %}
+          <li>ニュース準備中</li>
+          {% endfor %}
+
+          {% if thumb_article %}
+          <li class="news-image-item">
+            <a href="{{ url_for('country_page', country=country, post_id=thumb_article.id) }}" target="_blank">
+              <img src="{{ thumb_article.thumbnail_url or url_for('static', filename='news_thumb.jpg') }}" alt="{{ thumb_article.title_short }}" referrerpolicy="no-referrer">
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+
+      {% endfor %}
+
+    </section>
+
+    <section class="content-grid">
+
+      <section class="latest-area europe-cross-section">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">EUROPE CROSS TILE</p>
+            <h2>Europe Cross News</h2>
+          </div>
+          <p class="section-note">欧州横断メディア各社から最新1件ずつ表示</p>
+        </div>
+
+        <div class="europe-source-list">
+          {% for item in europe_cross_tile %}
+          <a class="europe-source-row" href="{{ url_for('europe_page') }}" target="_blank" rel="noopener">
+            <div class="europe-source-meta">
+              <span>{{ item.source_name }}</span>
+              <span>{{ item.published_at }}</span>
+            </div>
+            <h3 class="europe-source-title">{{ item.display_title }}</h3>
+          </a>
+          {% else %}
+          <div class="europe-source-row">
+            <h3 class="europe-source-title">Europe Cross News 準備中</h3>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="monitor-link-wrap">
+          <a class="monitor-link" href="{{ url_for('europe_page') }}" target="_blank">
+            Europe Cross Monitor を開く
+          </a>
+        </div>
+      </section>
+
+      <aside class="search-area" id="results">
+        <h2>WWS Global Search</h2>
+
+        <form class="search-form" method="get" action="{{ url_for('index') }}#results">
+          <input type="text" name="q" value="{{ q }}" placeholder="WWS全体検索 例：asylum / deportation / border">
+          <button type="submit">検索</button>
+        </form>
+
+        {% if q %}
+        <div class="search-result-list">
+          {% for item in search_results %}
+          <a class="search-result-row" href="{{ item.url }}" target="_blank" rel="noopener">
+            <div class="search-result-meta">
+              <span>{{ item.country }}</span>
+              <span>{{ item.source_name }}</span>
+              <span>{{ item.published_at }}</span>
+            </div>
+            <h3 class="search-result-title">{{ item.display_title }}</h3>
+          </a>
+          {% else %}
+          <div class="search-result-row">
+            <h3 class="search-result-title">該当なし</h3>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </aside>
+
+    </section>
+
+  </main>
+
+</body>
+</html>
