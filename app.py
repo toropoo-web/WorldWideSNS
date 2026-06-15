@@ -19,7 +19,7 @@ COUNTRY_SOURCE_MAP = {
     "UK": "イギリス",
     "Italy": "イタリア",
     "France": "フランス",
-    "Germany": "ドイチE,
+    "Germany": "ドイツ",
 }
 
 MONITOR_COUNTRIES = [
@@ -32,16 +32,16 @@ MONITOR_COUNTRIES = [
 ]
 
 SEARCH_EXPANSION = {
-    "移民: ["移民, "migration", "migrant", "immigration"],
-    "難民: ["難民, "refugee", "asylum", "asylum seeker"],
-    "国境: ["国境, "border", "frontier"],
+    "移民": ["移民", "migration", "migrant", "immigration"],
+    "難民": ["難民", "refugee", "asylum", "asylum seeker"],
+    "国境": ["国境", "border", "frontier"],
     "強制送還": ["強制送還", "deportation", "deport", "removal"],
     "送還": ["送還", "deportation", "deport", "return"],
-    "不法移民: ["不法移民, "illegal migration", "illegal migrant", "irregular migration"],
+    "不法移民": ["不法移民", "illegal migration", "illegal migrant", "irregular migration"],
     "犯罪": ["犯罪", "crime", "criminal", "violence"],
-    "暴動: ["暴動, "riot", "unrest", "violence"],
-    "統合: ["統合, "integration"],
-    "移民協定: ["移民協定, "migration pact", "EU migration pact"],
+    "暴動": ["暴動", "riot", "unrest", "violence"],
+    "統合": ["統合", "integration"],
+    "移民協定": ["移民協定", "migration pact", "EU migration pact"],
 }
 
 
