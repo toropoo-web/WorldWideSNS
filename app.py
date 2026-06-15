@@ -621,6 +621,9 @@ def europe_page():
 
     selected_post = get_selected_item(cur, post_id)
 
+    print("EUROPE_DEBUG_POST_ID =", post_id)
+    print("EUROPE_DEBUG_SELECTED =", selected_post)
+
     conn.close()
 
     return render_template(
