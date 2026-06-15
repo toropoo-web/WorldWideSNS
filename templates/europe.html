@@ -257,6 +257,37 @@
         <button type="submit">検索</button>
       </form>
     </section>
+   
+    {% if selected_post %}
+    <section class="selected-article">
+      <div class="article-row">
+        <div class="article-body">
+          <div class="article-meta">
+            <span>{{ selected_post.source_name }}</span>
+            <span>{{ selected_post.published_at }}</span>
+          </div>
+
+          <h2 class="article-title-ja">{{ selected_post.display_title }}</h2>
+
+          {% if selected_post.title and selected_post.title != selected_post.display_title %}
+          <p class="article-title-en">{{ selected_post.title }}</p>
+          {% endif %}
+
+          {% if selected_post.display_summary %}
+          <p class="article-summary">{{ selected_post.display_summary }}</p>
+          {% endif %}
+
+          <p>
+            <a href="{{ selected_post.url }}" target="_blank" rel="noopener">元記事を開く</a>
+          </p>
+        </div>
+
+        <div class="article-thumb">
+          <img src="{{ selected_post.thumbnail_url or url_for('static', filename='news_thumb.jpg') }}" alt="{{ selected_post.display_title }}" referrerpolicy="no-referrer">
+        </div>
+      </div>
+    </section>
+    {% endif %}
 
     <section class="article-list">
       {% for item in articles %}
