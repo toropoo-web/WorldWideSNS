@@ -224,7 +224,7 @@
 
         <div class="europe-source-list">
           {% for item in europe_cross_tile %}
-          <a class="europe-source-row" href="{{ url_for('europe_page') }}" target="_blank" rel="noopener">
+          <a class="europe-source-row" href="{{ item.url }}" target="_blank" rel="noopener"></a>
             <div class="europe-source-meta">
               <span>{{ item.source_name }}</span>
               <span>{{ item.published_at }}</span>
