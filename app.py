@@ -645,6 +645,9 @@ def country_page(country):
 
     selected_post = get_selected_item(cur, post_id)
 
+    print("DEBUG_POST_ID =", post_id)
+    print("DEBUG_SELECTED =", selected_post)
+
     news_articles = get_country_news_list(cur, conn, country, limit=20)
     sns_articles = get_country_sns_list(cur, country, limit=20)
 
