@@ -102,12 +102,38 @@
       font-size: 14px;
     }
 
-    .search-form button {
+        .search-form button {
       padding: 12px 22px;
       border: 1px solid rgba(245, 248, 255, 0.85);
       background: rgba(255, 255, 255, 0.08);
       color: #ffffff;
       cursor: pointer;
+    }
+
+    .selected-article {
+      margin-bottom: 30px;
+      padding: 14px;
+      border: 3px solid #ff2f8f;
+      background: rgba(255, 47, 143, 0.10);
+      box-shadow:
+        0 0 18px rgba(255,47,143,0.55),
+        inset 0 0 12px rgba(255,47,143,0.25);
+    }
+
+    .selected-article::before {
+      content: "SELECTED ARTICLE";
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 4px 10px;
+      background: #ff2f8f;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+    }
+
+    .selected-article .article-row {
+      border: none;
     }
 
     .article-list {
