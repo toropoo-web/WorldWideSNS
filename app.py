@@ -32,16 +32,16 @@ MONITOR_COUNTRIES = [
 ]
 
 SEARCH_EXPANSION = {
-    "移氁E: ["移氁E, "migration", "migrant", "immigration"],
-    "難氁E: ["難氁E, "refugee", "asylum", "asylum seeker"],
-    "国墁E: ["国墁E, "border", "frontier"],
-    "強制送E��": ["強制送E��", "deportation", "deport", "removal"],
-    "送E��": ["送E��", "deportation", "deport", "return"],
-    "不法移氁E: ["不法移氁E, "illegal migration", "illegal migrant", "irregular migration"],
+    "移民: ["移民, "migration", "migrant", "immigration"],
+    "難民: ["難民, "refugee", "asylum", "asylum seeker"],
+    "国境: ["国境, "border", "frontier"],
+    "強制送還": ["強制送還", "deportation", "deport", "removal"],
+    "送還": ["送還", "deportation", "deport", "return"],
+    "不法移民: ["不法移民, "illegal migration", "illegal migrant", "irregular migration"],
     "犯罪": ["犯罪", "crime", "criminal", "violence"],
-    "暴勁E: ["暴勁E, "riot", "unrest", "violence"],
-    "統吁E: ["統吁E, "integration"],
-    "移民協宁E: ["移民協宁E, "migration pact", "EU migration pact"],
+    "暴動: ["暴動, "riot", "unrest", "violence"],
+    "統合: ["統合, "integration"],
+    "移民協定: ["移民協定, "migration pact", "EU migration pact"],
 }
 
 
