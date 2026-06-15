@@ -607,6 +607,7 @@ def index():
 @app.route("/europe")
 def europe_page():
     q = request.args.get("q", "").strip()
+    post_id = request.args.get("post_id")
 
     conn = get_db_connection()
     cur = conn.cursor()
@@ -618,6 +619,8 @@ def europe_page():
     source_counts = get_europe_source_counts(cur)
     articles = get_europe_monitor_news(cur, conn, q=q, limit=50)
 
+    selected_post = get_selected_item(cur, post_id)
+
     conn.close()
 
     return render_template(
@@ -626,6 +629,7 @@ def europe_page():
         total_count=total_count,
         source_counts=source_counts,
         articles=articles,
+        selected_post=selected_post,
     )
 
 
