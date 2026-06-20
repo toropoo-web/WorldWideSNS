@@ -77,8 +77,9 @@
       {{ country }}｜News / SNS
     </h2>
 
+    <div class="tile-section-label">NEWS</div>
     <div class="country-article-grid">
-      {% for article in articles[:10] %}
+      {% for article in news_articles[:10] %}
       <article class="country-article-tile {% if article.thumbnail_url %}has-thumb{% else %}no-thumb{% endif %}">
 
         {% if article.thumbnail_url %}
@@ -110,6 +111,51 @@
       </article>
       {% else %}
       <p>表示できる情報がありません</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="country-list-area">
+    <h2>LOCAL</h2>
+    <div class="country-article-grid">
+      {% for article in local_articles[:10] %}
+      <article class="country-article-tile {% if article.thumbnail_url %}has-thumb{% else %}no-thumb{% endif %}">
+        {% if article.thumbnail_url %}
+        <div class="country-article-thumb">
+          <img src="{{ article.thumbnail_url }}" alt="{{ article.title_short }}" referrerpolicy="no-referrer">
+        </div>
+        {% endif %}
+        <div class="country-article-body">
+          <a href="{{ url_for('country_page', country=country, post_id=article.id) }}" target="_blank" class="country-article-title-ja">
+            {{ article.title_short }}
+          </a>
+          <div class="country-article-meta">
+            Source: {{ article.source_name }} ・・Type: LOCAL
+          </div>
+        </div>
+      </article>
+      {% else %}
+      <p>No LOCAL items.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="country-list-area">
+    <h2>SNS</h2>
+    <div class="country-article-grid">
+      {% for article in sns_articles[:10] %}
+      <article class="country-article-tile no-thumb">
+        <div class="country-article-body">
+          <a href="{{ url_for('country_page', country=country, post_id=article.id) }}" target="_blank" class="country-article-title-ja">
+            {{ article.title_short }}
+          </a>
+          <div class="country-article-meta">
+            Source: {{ article.title }} ・・Type: {{ article.platform }}
+          </div>
+        </div>
+      </article>
+      {% else %}
+      <p>No SNS items.</p>
       {% endfor %}
     </div>
   </section>

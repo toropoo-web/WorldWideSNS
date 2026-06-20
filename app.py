@@ -12,6 +12,72 @@ app = Flask(__name__)
 
 DB_FILE = "./output/immigration_watch.db"
 
+CRIME_KEYWORDS = (
+    "crime", "murder", "assault", "theft", "stabbing",
+    "gang", "police", "arrest",
+)
+IMMIGRATION_KEYWORDS = (
+    "immigration", "migrant", "refugee", "asylum",
+    "border", "deportation", "illegal",
+)
+TIER_WEIGHTS = {
+    "T1": 1.0,
+    "T2": 1.15,
+    "T3": 1.45,
+    "T4": 0.75,
+}
+BIAS_PENALTIES = {
+    "low": 1.0,
+    "medium": 0.9,
+    "high": 0.75,
+}
+T1_SOURCE_TYPES = {
+    "mainstream_news", "government", "news",
+}
+T2_SOURCE_TYPES = {
+    "investigative_media",
+}
+T3_SOURCE_TYPES = {
+    "local_news", "police_report", "city_news",
+    "regional_media", "aggregator",
+}
+T4_SOURCE_TYPES = {
+    "reddit", "forum", "blog", "x", "twitter",
+    "sns", "social_media",
+}
+SNS_SCORE_MULTIPLIER = 0.7
+PHASE7_SOURCES = (
+    (
+        "bbc_news", "BBC News", "bbc.com", "UK", "en",
+        "mainstream_news", "national", 95,
+    ),
+    (
+        "le_monde", "Le Monde", "lemonde.fr", "FR", "fr",
+        "mainstream_news", "national", 92,
+    ),
+    (
+        "cnn", "CNN", "cnn.com", "US", "en",
+        "mainstream_news", "national", 90,
+    ),
+    (
+        "der_spiegel", "Der Spiegel", "spiegel.de", "DE", "de",
+        "mainstream_news", "national", 93,
+    ),
+    (
+        "nhk", "NHK", "nhk.or.jp", "JP", "ja",
+        "mainstream_news", "national", 98,
+    ),
+    (
+        "reuters", "Reuters", "reuters.com", "INT", "en",
+        "mainstream_news", "global", 97,
+    ),
+    (
+        "euronews", "Euronews", "euronews.com", "EU", "en",
+        "mainstream_news", "regional", 85,
+    ),
+)
+_PHASE7_MIGRATED_DATABASES = set()
+
 COUNTRY_SOURCE_MAP = {
     "Japan": "日本",
     "JPN": "日本",
@@ -74,15 +140,385 @@ def get_db_connection():
     return conn
 
 
+def classify_article(title):
+    text = (title or "").lower()
+
+    if any(keyword in text for keyword in CRIME_KEYWORDS):
+        return "crime"
+    if any(keyword in text for keyword in IMMIGRATION_KEYWORDS):
+        return "immigration"
+    return "general"
+
+
+def calculate_article_score(
+    reliability_score,
+    source_type,
+    bias_risk,
+    category,
+    region_scope=None,
+):
+    reliability = float(reliability_score or 0)
+    tier = get_source_tier(source_type, region_scope)
+    tier_weight = TIER_WEIGHTS[tier]
+    bias_penalty = BIAS_PENALTIES.get(bias_risk, 1.0)
+    keyword_bonus = {
+        "crime": 12,
+        "immigration": 10,
+    }.get(category, 0)
+    score = (
+        reliability
+        * tier_weight
+        * bias_penalty
+        + keyword_bonus
+    )
+    if tier == "T4":
+        score *= SNS_SCORE_MULTIPLIER
+    return max(0.0, min(score, 100.0))
+
+
+def get_source_tier(source_type, region_scope=None):
+    normalized_type = (source_type or "").strip().lower()
+    normalized_scope = (region_scope or "").strip().lower()
+
+    if normalized_type in T4_SOURCE_TYPES:
+        return "T4"
+    if (
+        normalized_scope == "regional"
+        or normalized_type in T3_SOURCE_TYPES
+    ):
+        return "T3"
+    if normalized_type in T2_SOURCE_TYPES:
+        return "T2"
+    return "T1"
+
+
+def get_article_group(source_type, region_scope=None):
+    tier = get_source_tier(source_type, region_scope)
+    if tier in ("T1", "T2"):
+        return "NEWS"
+    if tier == "T3":
+        return "LOCAL"
+    if tier == "T4":
+        return "SNS"
+    return "NEWS"
+
+
+def _add_missing_columns(cur, table_name, columns):
+    cur.execute(f"PRAGMA table_info({table_name})")
+    existing = {row["name"] for row in cur.fetchall()}
+
+    for column_name, column_type in columns:
+        if column_name not in existing:
+            cur.execute(
+                f"ALTER TABLE {table_name} "
+                f"ADD COLUMN {column_name} {column_type}"
+            )
+
+
+def _phase7_category_sql(title_sql):
+    crime_sql = " OR ".join(
+        f"instr(lower(COALESCE({title_sql}, '')), '{keyword}') > 0"
+        for keyword in CRIME_KEYWORDS
+    )
+    immigration_sql = " OR ".join(
+        f"instr(lower(COALESCE({title_sql}, '')), '{keyword}') > 0"
+        for keyword in IMMIGRATION_KEYWORDS
+    )
+    return (
+        f"CASE WHEN ({crime_sql}) THEN 'crime' "
+        f"WHEN ({immigration_sql}) THEN 'immigration' "
+        "ELSE 'general' END"
+    )
+
+
+def migrate_phase7(conn):
+    database_key = os.path.abspath(DB_FILE)
+    if database_key in _PHASE7_MIGRATED_DATABASES:
+        return
+
+    cur = conn.cursor()
+    _add_missing_columns(
+        cur,
+        "news_posts",
+        (
+            ("category", "TEXT"),
+            ("source_id", "TEXT"),
+            ("score", "REAL"),
+        ),
+    )
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS sources (
+            source_id TEXT PRIMARY KEY,
+            source_name TEXT,
+            domain TEXT,
+            country TEXT,
+            language TEXT,
+            source_type TEXT,
+            region_scope TEXT,
+            reliability_score INTEGER,
+            update_frequency TEXT,
+            access_type TEXT,
+            content_type TEXT,
+            bias_risk TEXT,
+            notes TEXT
+        )
+    """)
+    _add_missing_columns(
+        cur,
+        "sources",
+        (
+            ("source_id", "TEXT"),
+            ("domain", "TEXT"),
+            ("language", "TEXT"),
+            ("region_scope", "TEXT"),
+            ("reliability_score", "INTEGER"),
+            ("update_frequency", "TEXT"),
+            ("access_type", "TEXT"),
+            ("content_type", "TEXT"),
+            ("bias_risk", "TEXT"),
+        ),
+    )
+    cur.execute("""
+        CREATE UNIQUE INDEX IF NOT EXISTS
+        ux_sources_source_id
+        ON sources(source_id)
+        WHERE source_id IS NOT NULL
+    """)
+
+    for source in PHASE7_SOURCES:
+        cur.execute("""
+            INSERT OR REPLACE INTO sources (
+                source_id,
+                source_name,
+                domain,
+                country,
+                language,
+                source_type,
+                region_scope,
+                reliability_score,
+                update_frequency,
+                access_type,
+                content_type,
+                bias_risk,
+                notes
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            *source,
+            None,
+            None,
+            None,
+            None,
+            None,
+        ))
+
+    category_sql = _phase7_category_sql("NEW.title")
+    score_category_sql = _phase7_category_sql("NEW.title")
+    source_match_sql = """
+        FROM sources
+        WHERE domain IS NOT NULL
+          AND domain != ''
+          AND instr(
+              lower(COALESCE(NEW.url, '')),
+              lower(domain)
+          ) > 0
+        ORDER BY length(domain) DESC
+        LIMIT 1
+    """
+    cur.execute("DROP TRIGGER IF EXISTS trg_news_posts_phase7_insert")
+    cur.execute("DROP TRIGGER IF EXISTS trg_news_posts_phase8_insert")
+    cur.execute("DROP TRIGGER IF EXISTS trg_news_posts_phase8_sns_dedupe")
+    cur.execute("""
+        CREATE TRIGGER trg_news_posts_phase8_sns_dedupe
+        BEFORE INSERT ON news_posts
+        WHEN (
+            lower(COALESCE(NEW.source_type, '')) IN (
+                'reddit', 'forum', 'blog', 'x', 'twitter',
+                'sns', 'social_media'
+            )
+            OR EXISTS (
+                SELECT 1
+                FROM sources
+                WHERE lower(COALESCE(source_type, '')) IN (
+                    'reddit', 'forum', 'blog', 'x', 'twitter',
+                    'sns', 'social_media'
+                )
+                  AND domain IS NOT NULL
+                  AND domain != ''
+                  AND instr(
+                      lower(COALESCE(NEW.url, '')),
+                      lower(domain)
+                  ) > 0
+            )
+        )
+        AND EXISTS (
+            SELECT 1
+            FROM news_posts
+            WHERE (
+                COALESCE(NEW.url, '') != ''
+                AND lower(COALESCE(url, ''))
+                    = lower(COALESCE(NEW.url, ''))
+            )
+            OR (
+                COALESCE(NEW.title, '') != ''
+                AND lower(COALESCE(title, ''))
+                    = lower(COALESCE(NEW.title, ''))
+                AND lower(COALESCE(source_name, ''))
+                    = lower(COALESCE(NEW.source_name, ''))
+            )
+        )
+        BEGIN
+            SELECT RAISE(IGNORE);
+        END
+    """)
+    cur.execute(f"""
+        CREATE TRIGGER trg_news_posts_phase8_insert
+        AFTER INSERT ON news_posts
+        BEGIN
+            UPDATE news_posts
+            SET
+                category = {category_sql},
+                source_id = (
+                    SELECT source_id
+                    {source_match_sql}
+                ),
+                score = COALESCE((
+                    SELECT
+                        MIN(
+                            100,
+                            MAX(
+                                0,
+                                (
+                                    reliability_score
+                                    * CASE
+                                        WHEN lower(COALESCE(source_type, ''))
+                                            IN (
+                                                'reddit', 'forum', 'blog',
+                                                'x', 'twitter', 'sns',
+                                                'social_media'
+                                            )
+                                            THEN 0.75
+                                        WHEN lower(COALESCE(region_scope, ''))
+                                            = 'regional'
+                                            OR lower(COALESCE(source_type, ''))
+                                            IN (
+                                                'local_news',
+                                                'police_report',
+                                                'city_news',
+                                                'regional_media',
+                                                'aggregator'
+                                            )
+                                            THEN 1.45
+                                        WHEN lower(COALESCE(source_type, ''))
+                                            = 'investigative_media'
+                                            THEN 1.15
+                                        ELSE 1.0
+                                      END
+                                    * CASE lower(COALESCE(bias_risk, 'low'))
+                                        WHEN 'medium' THEN 0.9
+                                        WHEN 'high' THEN 0.75
+                                        ELSE 1.0
+                                      END
+                                    + CASE {score_category_sql}
+                                        WHEN 'crime' THEN 12
+                                        WHEN 'immigration' THEN 10
+                                        ELSE 0
+                                      END
+                                )
+                                * CASE
+                                    WHEN lower(COALESCE(source_type, ''))
+                                        IN (
+                                            'reddit', 'forum', 'blog',
+                                            'x', 'twitter', 'sns',
+                                            'social_media'
+                                        )
+                                        THEN 0.7
+                                    ELSE 1.0
+                                  END
+                            )
+                        )
+                    {source_match_sql}
+                ), 0)
+                + CASE
+                    WHEN (
+                        SELECT source_id
+                        {source_match_sql}
+                    ) IS NULL
+                    THEN CASE {score_category_sql}
+                        WHEN 'crime' THEN 12
+                        WHEN 'immigration' THEN 10
+                        ELSE 0
+                      END
+                    ELSE 0
+                  END
+            WHERE id = NEW.id;
+        END
+    """)
+
+    cur.execute("""
+        SELECT
+            id,
+            title,
+            url
+        FROM news_posts
+    """)
+    rows = cur.fetchall()
+
+    cur.execute("""
+        SELECT
+            source_id,
+            domain,
+            source_type,
+            region_scope,
+            reliability_score,
+            bias_risk
+        FROM sources
+        WHERE source_id IS NOT NULL
+          AND domain IS NOT NULL
+          AND domain != ''
+        ORDER BY length(domain) DESC
+    """)
+    sources = [dict(row) for row in cur.fetchall()]
+
+    for row in rows:
+        category = classify_article(row["title"])
+        article_url = (row["url"] or "").lower()
+        source = next(
+            (
+                item for item in sources
+                if item["domain"].lower() in article_url
+            ),
+            None,
+        )
+        source_id = source["source_id"] if source else None
+        score = calculate_article_score(
+            source["reliability_score"] if source else 0,
+            source["source_type"] if source else "",
+            source["bias_risk"] if source else "",
+            category,
+            source["region_scope"] if source else "",
+        )
+        cur.execute("""
+            UPDATE news_posts
+            SET category = ?, source_id = ?, score = ?
+            WHERE id = ?
+        """, (category, source_id, score, row["id"]))
+
+    conn.commit()
+    _PHASE7_MIGRATED_DATABASES.add(database_key)
+
+
 def ensure_columns(cur):
-    cur.execute("PRAGMA table_info(news_posts)")
-    columns = [row["name"] for row in cur.fetchall()]
-
-    if "thumbnail_url" not in columns:
-        cur.execute("ALTER TABLE news_posts ADD COLUMN thumbnail_url TEXT")
-
-    if "summary_ja" not in columns:
-        cur.execute("ALTER TABLE news_posts ADD COLUMN summary_ja TEXT")
+    _add_missing_columns(
+        cur,
+        "news_posts",
+        (
+            ("thumbnail_url", "TEXT"),
+            ("summary_ja", "TEXT"),
+        ),
+    )
+    migrate_phase7(cur.connection)
 
 
 def parse_news_date(value):
@@ -168,6 +604,23 @@ def clean_news_row(row):
     row["country"] = row.get("country") or ""
     row["published_at"] = row.get("published_at") or ""
     row["thumbnail_url"] = row.get("thumbnail_url") or ""
+    row["category"] = row.get("category") or "general"
+    row["source_id"] = row.get("source_id")
+    row["score"] = float(row.get("score") or 0)
+    row["phase7_source_type"] = (
+        row.get("phase7_source_type")
+        or row.get("source_type")
+        or ""
+    )
+    row["region_scope"] = row.get("region_scope") or ""
+    row["tier"] = get_source_tier(
+        row["phase7_source_type"],
+        row["region_scope"],
+    )
+    row["display_group"] = get_article_group(
+        row["phase7_source_type"],
+        row["region_scope"],
+    )
     row["item_type"] = "news"
     row["platform"] = "NEWS"
     row["title_short"] = display_title[:42] + "..." if len(display_title) > 42 else display_title
@@ -231,6 +684,23 @@ def pick_random_items(items, limit):
     return random.sample(items, min(limit, len(items)))
 
 
+def deduplicate_items(items):
+    results = []
+    seen = set()
+
+    for item in items:
+        key = (
+            (item.get("url") or "").strip().lower()
+            or (item.get("display_title") or "").strip().lower()
+        )
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        results.append(item)
+
+    return results
+
+
 def get_news_by_country(cur, conn, country, limit=3):
     ensure_columns(cur)
 
@@ -262,26 +732,55 @@ def get_news_by_country(cur, conn, country, limit=3):
 def get_country_news_list(cur, conn, country, limit=20):
     ensure_columns(cur)
 
-    aliases = get_country_aliases(country)
-    placeholders = ",".join(["?"] * len(aliases))
-
-    cur.execute(f"""
+    cur.execute("""
         SELECT *
         FROM news_posts
-        WHERE country IN ({placeholders})
-        ORDER BY id DESC
-        LIMIT 300
-    """, aliases)
+        WHERE country = ?
+        ORDER BY score DESC
+    """, (country,))
 
     rows = cur.fetchall()
-    rows = [clean_news_row(row) for row in rows]
+    source_ids = {
+        row["source_id"]
+        for row in rows
+        if row["source_id"]
+    }
+    source_types = {}
 
-    rows.sort(
-        key=lambda x: parse_news_date(x.get("published_at")),
-        reverse=True
-    )
+    if source_ids:
+        placeholders = ",".join("?" for _ in source_ids)
+        cur.execute(f"""
+            SELECT source_id, source_type, region_scope
+            FROM sources
+            WHERE source_id IN ({placeholders})
+        """, tuple(source_ids))
+        source_types = {
+            row["source_id"]: {
+                "source_type": row["source_type"],
+                "region_scope": row["region_scope"],
+            }
+            for row in cur.fetchall()
+        }
 
-    return rows[:limit]
+    articles = []
+    for row in rows[:limit]:
+        item = dict(row)
+        source_metadata = source_types.get(
+            item.get("source_id"),
+            {},
+        )
+        item["phase7_source_type"] = (
+            source_metadata.get("source_type")
+            or item.get("source_type")
+            or ""
+        )
+        item["region_scope"] = (
+            source_metadata.get("region_scope")
+            or ""
+        )
+        articles.append(clean_news_row(item))
+
+    return articles
 
 
 def get_europe_cross_tile(cur, conn):
@@ -331,6 +830,12 @@ def get_europe_monitor_news(cur, conn, q="", limit=50):
     ensure_columns(cur)
 
     terms = expand_search_terms(q)
+    europe_scope_sql = """
+        (
+            news_posts.country IS NULL
+            OR sources.region_scope = 'regional'
+        )
+    """
 
     if terms:
         conditions = []
@@ -340,10 +845,10 @@ def get_europe_monitor_news(cur, conn, q="", limit=50):
             like = f"%{term}%"
             conditions.append("""
                 (
-                    title LIKE ?
-                    OR title_ja LIKE ?
-                    OR summary_ja LIKE ?
-                    OR source_name LIKE ?
+                    news_posts.title LIKE ?
+                    OR news_posts.title_ja LIKE ?
+                    OR news_posts.summary_ja LIKE ?
+                    OR news_posts.source_name LIKE ?
                 )
             """)
             params.extend([like, like, like, like])
@@ -351,32 +856,41 @@ def get_europe_monitor_news(cur, conn, q="", limit=50):
         where_sql = " OR ".join(conditions)
 
         cur.execute(f"""
-            SELECT *
+            SELECT
+                news_posts.*,
+                sources.source_type AS phase7_source_type,
+                sources.region_scope
             FROM news_posts
-            WHERE country = 'Europe'
+            LEFT JOIN sources
+                ON news_posts.source_id = sources.source_id
+            WHERE (
+                {europe_scope_sql}
+                OR news_posts.country = 'Europe'
+            )
               AND ({where_sql})
-            ORDER BY id DESC
-            LIMIT 800
-        """, params)
+            ORDER BY news_posts.score DESC
+            LIMIT ?
+        """, params + [limit])
 
     else:
-        cur.execute("""
-            SELECT *
+        cur.execute(f"""
+            SELECT
+                news_posts.*,
+                sources.source_type AS phase7_source_type,
+                sources.region_scope
             FROM news_posts
-            WHERE country = 'Europe'
-            ORDER BY id DESC
-            LIMIT 800
-        """)
+            LEFT JOIN sources
+                ON news_posts.source_id = sources.source_id
+            WHERE (
+                {europe_scope_sql}
+                OR news_posts.country = 'Europe'
+            )
+            ORDER BY news_posts.score DESC
+            LIMIT ?
+        """, (limit,))
 
     rows = cur.fetchall()
-    rows = [clean_news_row(row) for row in rows]
-
-    rows.sort(
-        key=lambda x: parse_news_date(x.get("published_at")),
-        reverse=True
-    )
-
-    return rows[:limit]
+    return [clean_news_row(row) for row in rows]
 
 
 def get_global_search_results(cur, conn, q="", limit=120):
@@ -428,17 +942,25 @@ def get_europe_total_count(cur):
     cur.execute("""
         SELECT COUNT(*)
         FROM news_posts
-        WHERE country = 'Europe'
+        LEFT JOIN sources
+            ON news_posts.source_id = sources.source_id
+        WHERE news_posts.country IS NULL
+           OR sources.region_scope = 'regional'
+           OR news_posts.country = 'Europe'
     """)
     return cur.fetchone()[0]
 
 
 def get_europe_source_counts(cur):
     cur.execute("""
-        SELECT source_name, COUNT(*)
+        SELECT news_posts.source_name, COUNT(*)
         FROM news_posts
-        WHERE country = 'Europe'
-        GROUP BY source_name
+        LEFT JOIN sources
+            ON news_posts.source_id = sources.source_id
+        WHERE news_posts.country IS NULL
+           OR sources.region_scope = 'regional'
+           OR news_posts.country = 'Europe'
+        GROUP BY news_posts.source_name
         ORDER BY COUNT(*) DESC
     """)
     return cur.fetchall()
@@ -476,7 +998,7 @@ def get_jpn_social_monitor_items(cur, conn, limit=3):
         row["platform"] = "JPN SOCIAL"
         row["source_name"] = row.get("source_name") or "JPN SOCIAL"
 
-    return rows
+    return deduplicate_items(rows)[:limit]
 
 
 def get_country_sns_list(cur, country, limit=20):
@@ -495,7 +1017,8 @@ def get_country_sns_list(cur, country, limit=20):
         LIMIT ?
     """, (country_ja, limit))
 
-    return [clean_sns_source(row) for row in cur.fetchall()]
+    rows = [clean_sns_source(row) for row in cur.fetchall()]
+    return deduplicate_items(rows)[:limit]
 
 
 def get_selected_item(cur, post_id):
@@ -651,18 +1174,34 @@ def country_page(country):
     print("DEBUG_POST_ID =", post_id)
     print("DEBUG_SELECTED =", selected_post)
 
-    news_articles = get_country_news_list(cur, conn, country, limit=20)
-    sns_articles = get_country_sns_list(cur, country, limit=20)
+    news_articles = get_country_news_list(cur, conn, country, limit=300)
+    grouped_news = [
+        article for article in news_articles
+        if article["display_group"] == "NEWS"
+    ]
+    local_articles = [
+        article for article in news_articles
+        if article["display_group"] == "LOCAL"
+    ]
+    sns_news_articles = [
+        article for article in news_articles
+        if article["display_group"] == "SNS"
+    ]
+    sns_source_articles = get_country_sns_list(
+        cur,
+        country,
+        limit=20,
+    )
+    sns_articles = deduplicate_items([
+        *sns_news_articles,
+        *sns_source_articles,
+    ])
 
-    mixed_articles = []
-    max_len = max(len(news_articles), len(sns_articles))
-
-    for i in range(max_len):
-        if i < len(news_articles):
-            mixed_articles.append(news_articles[i])
-
-        if i < len(sns_articles):
-            mixed_articles.append(sns_articles[i])
+    mixed_articles = [
+        *grouped_news,
+        *local_articles,
+        *sns_articles,
+    ]
 
     conn.close()
 
@@ -671,7 +1210,8 @@ def country_page(country):
         country=country,
         selected_post=selected_post,
         articles=mixed_articles,
-        news_articles=news_articles,
+        news_articles=grouped_news,
+        local_articles=local_articles,
         sns_articles=sns_articles,
     )
 
